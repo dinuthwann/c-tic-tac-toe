@@ -17,9 +17,22 @@ void printBoard() {
     printf(" %c | %c | %c \n", board[2][0], board[2][1], board[2][2]);
     printf("\n");
 }
-int main() {
-    printf("--- TIC TAC TOE (XOXO) GAME ---\n");
+void makeMove(int choice, char symbol) {
+    int row = (choice - 1) / 3; // Search the row through the number
+    int col = (choice - 1) % 3; // Search the Column through the number
     
+    board[row][col] = symbol;   // Add the  'X' or 'O' 
+}
+int main() {
+    int choice;
+    printf("--- TIC TAC TOE (XOXO) GAME ---\n");
+    printBoard();
+    
+    // Get the input from the player and change the board
+    printf("Player 1, enter a position (1-9): ");
+    scanf("%d", &choice);
+
+    makeMove(choice, 'X');
     // Display the board
     printBoard();
 
