@@ -17,6 +17,18 @@ void printBoard() {
     printf(" %c | %c | %c \n", board[2][0], board[2][1], board[2][2]);
     printf("\n");
 }
+// check the avilability
+int isValidMove(int choice) {
+    if (choice < 1 || choice > 9) return 0; // 1-9 valid otherwise Invalid
+    
+    int row = (choice - 1) / 3;
+    int col = (choice - 1) % 3;
+    
+    if (board[row][col] != 'X' && board[row][col] != 'O') {
+        return 1; // Valid Move
+    }
+    return 0; // Invalid Move (කලින් දාපු එකක්)
+}
 void makeMove(int choice, char symbol) {
     int row = (choice - 1) / 3; // Search the row through the number
     int col = (choice - 1) % 3; // Search the Column through the number
@@ -25,16 +37,30 @@ void makeMove(int choice, char symbol) {
 }
 int main() {
     int choice;
-    printf("--- TIC TAC TOE (XOXO) GAME ---\n");
-    printBoard();
+    int player = 1; // 1 = Player 1 ('X'), 2 = Player 2 ('O')
     
-    // Get the input from the player and change the board
-    printf("Player 1, enter a position (1-9): ");
-    scanf("%d", &choice);
+    char symbol;
 
-    makeMove(choice, 'X');
-    // Display the board
+    // simply test the 5 times
+    for (int turn = 0; turn < 5; turn++) {
+        printBoard();
+
+        symbol = (player == 1) ? 'X' : 'O';
+        printf("Player %d (%c), enter a position (1-9): ", player, symbol);
+        scanf("%d", &choice);
+
+        // Loop until a valid move is provided
+        while (!isValidMove(choice)) {
+            printf("Invalid move! Try again (1-9): ");
+            scanf("%d", &choice);
+        }
+
+        makeMove(choice, symbol);
+
+        // change the Player  (1 -> 2, 2 -> 1)
+        player = (player == 1) ? 2 : 1;
+    }
+
     printBoard();
-
     return 0;
 }
