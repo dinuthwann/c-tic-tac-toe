@@ -35,10 +35,33 @@ void makeMove(int choice, char symbol) {
     
     board[row][col] = symbol;   // Add the  'X' or 'O' 
 }
+  
+// Check whether the player has won or not
+int checkWin() {
+    // 1. check rows 
+    for (int i = 0; i < 3; i++) {
+        if (board[i][0] == board[i][1] && board[i][1] == board[i][2])
+            return 1;
+    }
+    // 2. Check columns 
+    for (int i = 0; i < 3; i++) {
+        if (board[0][i] == board[1][i] && board[1][i] == board[2][i])
+            return 1;
+    }
+    // 3. Check the diagonals 
+    if (board[0][0] == board[1][1] && board[1][1] == board[2][2])
+        return 1;
+    if (board[0][2] == board[1][1] && board[1][1] == board[2][0])
+        return 1;
+
+    return 0; 
+}
+
 int main() {
     int choice;
     int player = 1; // 1 = Player 1 ('X'), 2 = Player 2 ('O')
-    
+    int totalMoves = 0; 
+    int gameWon = 0;    
     char symbol;
 
     // simply test the 5 times
@@ -56,11 +79,24 @@ int main() {
         }
 
         makeMove(choice, symbol);
+        totalMoves++;
 
-        // change the Player  (1 -> 2, 2 -> 1)
+        if (checkWin()) {
+            gameWon = 1;
+            printBoard();
+            printf(" Congratulations! Player %d (%c) Wins!\n", player, symbol);
+            break;
+        }
+
+        // change the player 
         player = (player == 1) ? 2 : 1;
     }
 
-    printBoard();
+    // If no one can win, it's a draw
+    if (!gameWon && totalMoves == 9) {
+        printBoard();
+        printf(" Game Draw! Better luck next time.\n");
+    }
+
     return 0;
 }
