@@ -4,6 +4,11 @@
 // Declare a 3x3 array for the game board
 char board[3][3];
 
+// Score tracking variables
+int player1Wins = 0;
+int player2Wins = 0;
+int draws = 0;
+
 // Reset the board array back to numbers 1-9
 void resetBoard() {
     char count = '1';
@@ -14,7 +19,7 @@ void resetBoard() {
     }
 }
 
-// Function to clear screen and print the game board
+// Function to clear screen and print the game board with Scoreboard
 void printBoard() {
     // Clear screen based on OS
     #ifdef _WIN32
@@ -23,7 +28,13 @@ void printBoard() {
         system("clear"); // Linux/Mac
     #endif
 
-    printf("--- TIC TAC TOE (XOXO) GAME ---\n\n");
+    printf("===================================\n");
+    printf("     TIC TAC TOE (XOXO) GAME       \n");
+    printf("===================================\n");
+    // Display the updated scoreboard
+    printf(" SCORE: Player 1 (X): %d | Player 2 (O): %d | Draws: %d\n", player1Wins, player2Wins, draws);
+    printf("===================================\n\n");
+
     printf(" %c | %c | %c \n", board[0][0], board[0][1], board[0][2]);
     printf("---|---|---\n");
     printf(" %c | %c | %c \n", board[1][0], board[1][1], board[1][2]);
@@ -76,9 +87,8 @@ int checkWin() {
 int main() {
     char playAgain;
 
-    // Do-while loop to repeat the entire game if players want
     do {
-        resetBoard(); // Reset board to numbers 1-9 for every new game
+        resetBoard(); // Reset board for every new round
         
         int choice;
         int player = 1;     // 1 = Player 1 ('X'), 2 = Player 2 ('O')
@@ -86,7 +96,6 @@ int main() {
         int gameWon = 0;    // Flag to check if game is won
         char symbol;
 
-        // Loop until someone wins or max 9 moves are played
         while (totalMoves < 9 && !gameWon) {
             printBoard();
 
@@ -106,6 +115,11 @@ int main() {
             // Check if current move resulted in a win
             if (checkWin()) {
                 gameWon = 1;
+                
+                // Update score tracker
+                if (player == 1) player1Wins++;
+                else player2Wins++;
+
                 printBoard();
                 printf("🎉 Congratulations! Player %d (%c) Wins!\n", player, symbol);
                 break;
@@ -117,16 +131,20 @@ int main() {
 
         // If no one won and 9 moves played, it's a draw
         if (!gameWon && totalMoves == 9) {
+            draws++; // Update draw counter
             printBoard();
             printf("🤝 Game Draw! Better luck next time.\n");
         }
 
-        // Ask if players want to restart the game
+        // Ask if players want to play another round
         printf("\nDo you want to play again? (y/n): ");
         scanf(" %c", &playAgain);
 
     } while (playAgain == 'y' || playAgain == 'Y');
 
-    printf("\nThanks for playing! Goodbye 👋\n");
+    printf("\nFinal Scores:\n");
+    printf("Player 1 Wins: %d | Player 2 Wins: %d | Draws: %d\n", player1Wins, player2Wins, draws);
+    printf("Thanks for playing! Goodbye 👋\n");
+    
     return 0;
 }
