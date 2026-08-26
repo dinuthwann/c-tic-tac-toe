@@ -1,3 +1,4 @@
+//tix tac toe
 #include <stdio.h>
 #include <stdlib.h> // Clear screen (system) සඳහා
 #include <string.h>
