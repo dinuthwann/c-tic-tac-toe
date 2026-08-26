@@ -135,7 +135,7 @@ int main() {
                 else player2Wins++;
 
                 printBoard();
-                printf("🎉 Congratulations! %s (%c) Wins!\n", currentTurnName, symbol);
+                printf(" Congratulations! %s (%c) Wins!\n", currentTurnName, symbol);
                 break;
             }
 
@@ -147,7 +147,7 @@ int main() {
         if (!gameWon && totalMoves == 9) {
             draws++; // Update draw counter
             printBoard();
-            printf("🤝 Game Draw! Better luck next time.\n");
+            printf(" Game Draw! Better luck next time.\n");
         }
 
         // Ask if players want to play another round
