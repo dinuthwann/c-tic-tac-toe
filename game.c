@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h> // Clear screen (system) සඳහා
+#include <string.h>
 
 // Declare a 3x3 array for the game board
 char board[3][3];
+
+// Player names
+char player1Name[30];
+char player2Name[30];
 
 // Score tracking variables
 int player1Wins = 0;
@@ -19,7 +24,7 @@ void resetBoard() {
     }
 }
 
-// Function to clear screen and print the game board with Scoreboard
+// Function to clear screen and print the game board with custom names in Scoreboard
 void printBoard() {
     // Clear screen based on OS
     #ifdef _WIN32
@@ -28,12 +33,12 @@ void printBoard() {
         system("clear"); // Linux/Mac
     #endif
 
-    printf("===================================\n");
-    printf("     TIC TAC TOE (XOXO) GAME       \n");
-    printf("===================================\n");
-    // Display the updated scoreboard
-    printf(" SCORE: Player 1 (X): %d | Player 2 (O): %d | Draws: %d\n", player1Wins, player2Wins, draws);
-    printf("===================================\n\n");
+    printf("=====================================================\n");
+    printf("              TIC TAC TOE (XOXO) GAME                \n");
+    printf("=====================================================\n");
+    // Display scoreboard with custom player names
+    printf(" SCORE: %s (X): %d | %s (O): %d | Draws: %d\n", player1Name, player1Wins, player2Name, player2Wins, draws);
+    printf("=====================================================\n\n");
 
     printf(" %c | %c | %c \n", board[0][0], board[0][1], board[0][2]);
     printf("---|---|---\n");
@@ -87,6 +92,12 @@ int checkWin() {
 int main() {
     char playAgain;
 
+    // Get Player Names before starting the game
+    printf("Enter Player 1 Name (X): ");
+    scanf("%29s", player1Name);
+    printf("Enter Player 2 Name (O): ");
+    scanf("%29s", player2Name);
+
     do {
         resetBoard(); // Reset board for every new round
         
@@ -95,12 +106,15 @@ int main() {
         int totalMoves = 0; // Tracks valid moves played
         int gameWon = 0;    // Flag to check if game is won
         char symbol;
+        char *currentTurnName;
 
         while (totalMoves < 9 && !gameWon) {
             printBoard();
 
             symbol = (player == 1) ? 'X' : 'O';
-            printf("Player %d (%c), enter a position (1-9): ", player, symbol);
+            currentTurnName = (player == 1) ? player1Name : player2Name;
+
+            printf("%s (%c), enter a position (1-9): ", currentTurnName, symbol);
             scanf("%d", &choice);
 
             // Loop until a valid move is provided
@@ -121,7 +135,7 @@ int main() {
                 else player2Wins++;
 
                 printBoard();
-                printf(" Congratulations! Player %d (%c) Wins!\n", player, symbol);
+                printf("🎉 Congratulations! %s (%c) Wins!\n", currentTurnName, symbol);
                 break;
             }
 
@@ -133,7 +147,7 @@ int main() {
         if (!gameWon && totalMoves == 9) {
             draws++; // Update draw counter
             printBoard();
-            printf(" Game Draw! Better luck next time.\n");
+            printf("🤝 Game Draw! Better luck next time.\n");
         }
 
         // Ask if players want to play another round
@@ -143,8 +157,8 @@ int main() {
     } while (playAgain == 'y' || playAgain == 'Y');
 
     printf("\nFinal Scores:\n");
-    printf("Player 1 Wins: %d | Player 2 Wins: %d | Draws: %d\n", player1Wins, player2Wins, draws);
-    printf("Thanks for playing! Goodbye \n");
+    printf("%s Wins: %d | %s Wins: %d | Draws: %d\n", player1Name, player1Wins, player2Name, player2Wins, draws);
+    printf("Thanks for playing! Goodbye 👋\n");
     
     return 0;
 }
