@@ -1,4 +1,5 @@
 //tix tac toe
+
 #include <stdio.h>
 #include <stdlib.h> // For system() and rand()
 #include <string.h>
@@ -185,7 +186,7 @@ int main() {
         if (!gameWon && totalMoves == 9) {
             draws++; // Increment draw count
             printBoard();
-            printf("🤝 Game Draw! Better luck next time.\n");
+            printf(" Game Draw! Better luck next time.\n");
         }
 
         // Prompt user for replay option
@@ -197,7 +198,7 @@ int main() {
     // Display final score summary on exit
     printf("\nFinal Scores:\n");
     printf("%s Wins: %d | %s Wins: %d | Draws: %d\n", player1Name, player1Wins, player2Name, player2Wins, draws);
-    printf("Thanks for playing! Goodbye 👋\n");
+    printf("Thanks for playing! Goodbye \n");
     
     return 0;
 }
