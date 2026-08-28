@@ -1,5 +1,3 @@
-//tix tac toe
-
 #include <stdio.h>
 #include <stdlib.h> // For system() and rand()
 #include <string.h>
@@ -17,8 +15,9 @@ int player1Wins = 0;
 int player2Wins = 0;
 int draws = 0;
 
-// Game Mode: 1 = Two Players (Human vs Human), 2 = Single Player (Human vs Computer)
-int gameMode = 1;
+// Game Settings
+int gameMode = 1;   // 1 = Two Players, 2 = Single Player
+int difficulty = 1; // 1 = Easy, 2 = Hard
 
 // Reset the board array back to numbers '1' through '9'
 void resetBoard() {
@@ -76,15 +75,6 @@ void makeMove(int choice, char symbol) {
     board[row][col] = symbol;   // Place 'X' or 'O'
 }
 
-// Generate a random valid move for the Computer opponent
-int getComputerMove() {
-    int choice;
-    do {
-        choice = (rand() % 9) + 1; // Generate random number between 1 and 9
-    } while (!isValidMove(choice));
-    return choice;
-}
-
 // Check whether the current move results in a win
 int checkWin() {
     // 1. Check rows for matching symbols
@@ -106,6 +96,60 @@ int checkWin() {
     return 0; // No winner yet
 }
 
+// Generate a random valid move for Easy Mode
+int getRandomComputerMove() {
+    int choice;
+    do {
+        choice = (rand() % 9) + 1; // Generate random number between 1 and 9
+    } while (!isValidMove(choice));
+    return choice;
+}
+
+// Smart AI for Hard Mode: Tries to win first, then block human, else picks random
+int getSmartComputerMove() {
+    // 1. Check if Computer ('O') can win in the next move
+    for (int i = 1; i <= 9; i++) {
+        if (isValidMove(i)) {
+            makeMove(i, 'O');
+            if (checkWin()) {
+                // Undo test move and return winning choice
+                int row = (i - 1) / 3;
+                int col = (i - 1) % 3;
+                board[row][col] = '1' + (i - 1);
+                return i;
+            }
+            // Undo test move
+            int row = (i - 1) / 3;
+            int col = (i - 1) % 3;
+            board[row][col] = '1' + (i - 1);
+        }
+    }
+
+    // 2. Check if Human ('X') is about to win and block them
+    for (int i = 1; i <= 9; i++) {
+        if (isValidMove(i)) {
+            makeMove(i, 'X');
+            if (checkWin()) {
+                // Undo test move and return blocking choice
+                int row = (i - 1) / 3;
+                int col = (i - 1) % 3;
+                board[row][col] = '1' + (i - 1);
+                return i;
+            }
+            // Undo test move
+            int row = (i - 1) / 3;
+            int col = (i - 1) % 3;
+            board[row][col] = '1' + (i - 1);
+        }
+    }
+
+    // 3. Take center position (5) if available
+    if (isValidMove(5)) return 5;
+
+    // 4. Otherwise pick a random valid move
+    return getRandomComputerMove();
+}
+
 int main() {
     char playAgain;
     srand(time(NULL)); // Initialize random seed for computer moves
@@ -117,13 +161,19 @@ int main() {
     printf("Enter choice (1 or 2): ");
     scanf("%d", &gameMode);
 
-    // Set player names based on selected mode
+    // Set player names and difficulty based on selected mode
     if (gameMode == 2) {
-        printf("Enter Your Name (X): ");
+        printf("\nSelect AI Difficulty:\n");
+        printf("1. Easy\n");
+        printf("2. Hard (Smart AI)\n");
+        printf("Enter choice (1 or 2): ");
+        scanf("%d", &difficulty);
+
+        printf("\nEnter Your Name (X): ");
         scanf("%29s", player1Name);
         strcpy(player2Name, "Computer");
     } else {
-        printf("Enter Player 1 Name (X): ");
+        printf("\nEnter Player 1 Name (X): ");
         scanf("%29s", player1Name);
         printf("Enter Player 2 Name (O): ");
         scanf("%29s", player2Name);
@@ -149,8 +199,13 @@ int main() {
 
             // Handle turn execution for Human vs Computer logic
             if (player == 2 && gameMode == 2) {
-                printf("Computer is making a move...\n");
-                choice = getComputerMove();
+                printf("Computer is thinking...\n");
+                
+                if (difficulty == 2) {
+                    choice = getSmartComputerMove(); // Smart AI
+                } else {
+                    choice = getRandomComputerMove(); // Easy Random AI
+                }
             } else {
                 printf("%s (%c), enter a position (1-9): ", currentTurnName, symbol);
                 scanf("%d", &choice);
@@ -186,7 +241,7 @@ int main() {
         if (!gameWon && totalMoves == 9) {
             draws++; // Increment draw count
             printBoard();
-            printf(" Game Draw! Better luck next time.\n");
+            printf("🤝 Game Draw! Better luck next time.\n");
         }
 
         // Prompt user for replay option
@@ -198,7 +253,7 @@ int main() {
     // Display final score summary on exit
     printf("\nFinal Scores:\n");
     printf("%s Wins: %d | %s Wins: %d | Draws: %d\n", player1Name, player1Wins, player2Name, player2Wins, draws);
-    printf("Thanks for playing! Goodbye \n");
+    printf("Thanks for playing! Goodbye 👋\n");
     
     return 0;
 }
