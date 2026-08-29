@@ -3,6 +3,30 @@
 #include <string.h>
 #include <time.h>   // For srand()
 
+#ifdef _WIN32
+    #include <windows.h> // Windows Beep sound සඳහා
+#endif
+
+// Sound functions for moves and game win
+void playMoveSound() {
+    #ifdef _WIN32
+        Beep(750, 100); // Frequency 750Hz, Duration 100ms
+    #else
+        printf("\a");   // Standard Terminal Bell sound for Mac/Linux
+        fflush(stdout);
+    #endif
+}
+
+void playWinSound() {
+    #ifdef _WIN32
+        Beep(1000, 200);
+        Beep(1200, 300);
+    #else
+        printf("\a\a\a");
+        fflush(stdout);
+    #endif
+}
+
 // Declare a 3x3 array for the game board
 char board[3][3];
 
@@ -73,6 +97,7 @@ void makeMove(int choice, char symbol) {
     int col = (choice - 1) % 3; // Calculate column index
     
     board[row][col] = symbol;   // Place 'X' or 'O'
+    playMoveSound();            // Play move sound effect
 }
 
 // Check whether the current move results in a win
@@ -223,6 +248,7 @@ int main() {
             // Evaluate win condition
             if (checkWin()) {
                 gameWon = 1;
+                playWinSound(); // Play win sound effect
                 
                 // Update persistent score tracking
                 if (player == 1) player1Wins++;
