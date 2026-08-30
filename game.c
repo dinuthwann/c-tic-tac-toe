@@ -1,18 +1,18 @@
 #include <stdio.h>
 #include <stdlib.h> // For system() and rand()
 #include <string.h>
-#include <time.h>   // For srand()
+#include <time.h>   // For time() and srand()
 
 #ifdef _WIN32
-    #include <windows.h> // Windows Beep sound සඳහා
+    #include <windows.h> // Windows Beep sound
 #endif
 
 // Sound functions for moves and game win
 void playMoveSound() {
     #ifdef _WIN32
-        Beep(750, 100); // Frequency 750Hz, Duration 100ms
+        Beep(750, 100);
     #else
-        printf("\a");   // Standard Terminal Bell sound for Mac/Linux
+        printf("\a");
         fflush(stdout);
     #endif
 }
@@ -43,6 +43,57 @@ int draws = 0;
 int gameMode = 1;   // 1 = Two Players, 2 = Single Player
 int difficulty = 1; // 1 = Easy, 2 = Hard
 
+// Save match summary to a text file
+void saveGameHistory(const char *resultMessage) {
+    FILE *file = fopen("game_history.txt", "a");
+    if (file == NULL) {
+        return; // Failed to open file
+    }
+
+    time_t now = time(NULL);
+    char *timeStr = ctime(&now);
+    timeStr[strlen(timeStr) - 1] = '\0'; // Remove newline character from time string
+
+    fprintf(file, "[%s] Mode: %s | %s (%d) vs %s (%d) | Draws: %d | Result: %s\n",
+            timeStr,
+            (gameMode == 1) ? "2 Players" : (difficulty == 1 ? "vs AI (Easy)" : "vs AI (Hard)"),
+            player1Name, player1Wins,
+            player2Name, player2Wins,
+            draws,
+            resultMessage);
+
+    fclose(file);
+}
+
+// Display past match history from text file
+void viewGameHistory() {
+    FILE *file = fopen("game_history.txt", "r");
+    
+    #ifdef _WIN32
+        system("cls");
+    #else
+        system("clear");
+    #endif
+
+    printf("=====================================================\n");
+    printf("                 MATCH HISTORY LOG                   \n");
+    printf("=====================================================\n\n");
+
+    if (file == NULL) {
+        printf("No match history found yet.\n");
+    } else {
+        char line[256];
+        while (fgets(line, sizeof(line), file)) {
+            printf("%s", line);
+        }
+        fclose(file);
+    }
+
+    printf("\nPress Enter to return to main menu...");
+    getchar(); // Clear buffer
+    getchar(); // Wait for user enter key
+}
+
 // Reset the board array back to numbers '1' through '9'
 void resetBoard() {
     char count = '1';
@@ -55,7 +106,6 @@ void resetBoard() {
 
 // Function to clear the screen and display the game board with scoreboard
 void printBoard() {
-    // Clear screen based on Operating System
     #ifdef _WIN32
         system("cls");   // Windows
     #else
@@ -65,7 +115,6 @@ void printBoard() {
     printf("=====================================================\n");
     printf("              TIC TAC TOE (XOXO) GAME                \n");
     printf("=====================================================\n");
-    // Display updated scoreboard with player names
     printf(" SCORE: %s (X): %d | %s (O): %d | Draws: %d\n", player1Name, player1Wins, player2Name, player2Wins, draws);
     printf("=====================================================\n\n");
 
@@ -73,213 +122,225 @@ void printBoard() {
     printf("---|---|---\n");
     printf(" %c | %c | %c \n", board[1][0], board[1][1], board[1][2]);
     printf("---|---|---\n");
-    printf(" %c | %c | %c \n", board[2][0], board[2][1], board[2][2]);
+    printf(" %c | %c | %c \n", board[0][0], board[2][1], board[2][2]);
     printf("\n");
 }
 
 // Check if the selected position is valid and available
 int isValidMove(int choice) {
-    if (choice < 1 || choice > 9) return 0; // Return invalid if choice is outside range 1-9
+    if (choice < 1 || choice > 9) return 0;
     
     int row = (choice - 1) / 3;
     int col = (choice - 1) % 3;
     
-    // Check if position is not already marked by 'X' or 'O'
     if (board[row][col] != 'X' && board[row][col] != 'O') {
-        return 1; // Valid Move
+        return 1;
     }
-    return 0; // Invalid Move (position already taken)
+    return 0;
 }
 
 // Update board array with current player's symbol
 void makeMove(int choice, char symbol) {
-    int row = (choice - 1) / 3; // Calculate row index
-    int col = (choice - 1) % 3; // Calculate column index
+    int row = (choice - 1) / 3;
+    int col = (choice - 1) % 3;
     
-    board[row][col] = symbol;   // Place 'X' or 'O'
-    playMoveSound();            // Play move sound effect
+    board[row][col] = symbol;
+    playMoveSound();
 }
 
 // Check whether the current move results in a win
 int checkWin() {
-    // 1. Check rows for matching symbols
     for (int i = 0; i < 3; i++) {
         if (board[i][0] == board[i][1] && board[i][1] == board[i][2])
             return 1;
     }
-    // 2. Check columns for matching symbols
     for (int i = 0; i < 3; i++) {
         if (board[0][i] == board[1][i] && board[1][i] == board[2][i])
             return 1;
     }
-    // 3. Check both diagonals for matching symbols
     if (board[0][0] == board[1][1] && board[1][1] == board[2][2])
         return 1;
     if (board[0][2] == board[1][1] && board[1][1] == board[2][0])
         return 1;
 
-    return 0; // No winner yet
+    return 0;
 }
 
-// Generate a random valid move for Easy Mode
+// Easy Mode Random Move
 int getRandomComputerMove() {
     int choice;
     do {
-        choice = (rand() % 9) + 1; // Generate random number between 1 and 9
+        choice = (rand() % 9) + 1;
     } while (!isValidMove(choice));
     return choice;
 }
 
-// Smart AI for Hard Mode: Tries to win first, then block human, else picks random
+// Hard Mode Smart AI Move
 int getSmartComputerMove() {
-    // 1. Check if Computer ('O') can win in the next move
+    // 1. Winning move check
     for (int i = 1; i <= 9; i++) {
         if (isValidMove(i)) {
             makeMove(i, 'O');
             if (checkWin()) {
-                // Undo test move and return winning choice
                 int row = (i - 1) / 3;
                 int col = (i - 1) % 3;
                 board[row][col] = '1' + (i - 1);
                 return i;
             }
-            // Undo test move
             int row = (i - 1) / 3;
             int col = (i - 1) % 3;
             board[row][col] = '1' + (i - 1);
         }
     }
 
-    // 2. Check if Human ('X') is about to win and block them
+    // 2. Block human player move check
     for (int i = 1; i <= 9; i++) {
         if (isValidMove(i)) {
             makeMove(i, 'X');
             if (checkWin()) {
-                // Undo test move and return blocking choice
                 int row = (i - 1) / 3;
                 int col = (i - 1) % 3;
                 board[row][col] = '1' + (i - 1);
                 return i;
             }
-            // Undo test move
             int row = (i - 1) / 3;
             int col = (i - 1) % 3;
             board[row][col] = '1' + (i - 1);
         }
     }
 
-    // 3. Take center position (5) if available
+    // 3. Take center if available
     if (isValidMove(5)) return 5;
 
-    // 4. Otherwise pick a random valid move
+    // 4. Fallback to random move
     return getRandomComputerMove();
 }
 
 int main() {
     char playAgain;
-    srand(time(NULL)); // Initialize random seed for computer moves
+    int mainChoice;
+    srand(time(NULL));
 
-    // Prompt user to select game mode
-    printf("Select Game Mode:\n");
-    printf("1. Two Players (Human vs Human)\n");
-    printf("2. Single Player (Human vs Computer)\n");
-    printf("Enter choice (1 or 2): ");
-    scanf("%d", &gameMode);
+    while (1) {
+        #ifdef _WIN32
+            system("cls");
+        #else
+            system("clear");
+        #endif
 
-    // Set player names and difficulty based on selected mode
-    if (gameMode == 2) {
-        printf("\nSelect AI Difficulty:\n");
-        printf("1. Easy\n");
-        printf("2. Hard (Smart AI)\n");
-        printf("Enter choice (1 or 2): ");
-        scanf("%d", &difficulty);
+        printf("=====================================================\n");
+        printf("              TIC TAC TOE (XOXO) GAME                \n");
+        printf("=====================================================\n");
+        printf("1. Two Players (Human vs Human)\n");
+        printf("2. Single Player (Human vs Computer)\n");
+        printf("3. View Match History\n");
+        printf("4. Exit\n");
+        printf("Enter choice (1-4): ");
+        scanf("%d", &mainChoice);
 
-        printf("\nEnter Your Name (X): ");
-        scanf("%29s", player1Name);
-        strcpy(player2Name, "Computer");
-    } else {
-        printf("\nEnter Player 1 Name (X): ");
-        scanf("%29s", player1Name);
-        printf("Enter Player 2 Name (O): ");
-        scanf("%29s", player2Name);
+        if (mainChoice == 3) {
+            viewGameHistory();
+            continue;
+        } else if (mainChoice == 4) {
+            printf("Thanks for playing! Goodbye 👋\n");
+            break;
+        } else if (mainChoice != 1 && mainChoice != 2) {
+            continue;
+        }
+
+        gameMode = mainChoice;
+
+        // Reset wins count for a new session
+        player1Wins = 0;
+        player2Wins = 0;
+        draws = 0;
+
+        if (gameMode == 2) {
+            printf("\nSelect AI Difficulty:\n");
+            printf("1. Easy\n");
+            printf("2. Hard (Smart AI)\n");
+            printf("Enter choice (1 or 2): ");
+            scanf("%d", &difficulty);
+
+            printf("\nEnter Your Name (X): ");
+            scanf("%29s", player1Name);
+            strcpy(player2Name, "Computer");
+        } else {
+            printf("\nEnter Player 1 Name (X): ");
+            scanf("%29s", player1Name);
+            printf("Enter Player 2 Name (O): ");
+            scanf("%29s", player2Name);
+        }
+
+        // Gameplay loop
+        do {
+            resetBoard();
+            
+            int choice;
+            int player = 1;
+            int totalMoves = 0;
+            int gameWon = 0;
+            char symbol;
+            char *currentTurnName;
+            char resultMsg[100];
+
+            while (totalMoves < 9 && !gameWon) {
+                printBoard();
+
+                symbol = (player == 1) ? 'X' : 'O';
+                currentTurnName = (player == 1) ? player1Name : player2Name;
+
+                if (player == 2 && gameMode == 2) {
+                    printf("Computer is thinking...\n");
+                    if (difficulty == 2) {
+                        choice = getSmartComputerMove();
+                    } else {
+                        choice = getRandomComputerMove();
+                    }
+                } else {
+                    printf("%s (%c), enter a position (1-9): ", currentTurnName, symbol);
+                    scanf("%d", &choice);
+
+                    while (!isValidMove(choice)) {
+                        printf("Invalid move! Try again (1-9): ");
+                        scanf("%d", &choice);
+                    }
+                }
+
+                makeMove(choice, symbol);
+                totalMoves++;
+
+                if (checkWin()) {
+                    gameWon = 1;
+                    playWinSound();
+                    
+                    if (player == 1) player1Wins++;
+                    else player2Wins++;
+
+                    printBoard();
+                    printf("🎉 Congratulations! %s (%c) Wins!\n", currentTurnName, symbol);
+                    
+                    snprintf(resultMsg, sizeof(resultMsg), "%s Won", currentTurnName);
+                    saveGameHistory(resultMsg);
+                    break;
+                }
+
+                player = (player == 1) ? 2 : 1;
+            }
+
+            if (!gameWon && totalMoves == 9) {
+                draws++;
+                printBoard();
+                printf("🤝 Game Draw! Better luck next time.\n");
+                
+                saveGameHistory("Draw");
+            }
+
+            printf("\nDo you want to play another round in this session? (y/n): ");
+            scanf(" %c", &playAgain);
+
+        } while (playAgain == 'y' || playAgain == 'Y');
     }
 
-    // Main game loop allowing repeated rounds
-    do {
-        resetBoard(); // Reset board array for new round
-        
-        int choice;
-        int player = 1;     // 1 = Player 1 ('X'), 2 = Player 2 ('O')
-        int totalMoves = 0; // Count valid moves played
-        int gameWon = 0;    // Status flag for win condition
-        char symbol;
-        char *currentTurnName;
-
-        // Loop until a player wins or 9 moves are completed
-        while (totalMoves < 9 && !gameWon) {
-            printBoard();
-
-            symbol = (player == 1) ? 'X' : 'O';
-            currentTurnName = (player == 1) ? player1Name : player2Name;
-
-            // Handle turn execution for Human vs Computer logic
-            if (player == 2 && gameMode == 2) {
-                printf("Computer is thinking...\n");
-                
-                if (difficulty == 2) {
-                    choice = getSmartComputerMove(); // Smart AI
-                } else {
-                    choice = getRandomComputerMove(); // Easy Random AI
-                }
-            } else {
-                printf("%s (%c), enter a position (1-9): ", currentTurnName, symbol);
-                scanf("%d", &choice);
-
-                // Prompt until valid move position is entered
-                while (!isValidMove(choice)) {
-                    printf("Invalid move! Try again (1-9): ");
-                    scanf("%d", &choice);
-                }
-            }
-
-            makeMove(choice, symbol);
-            totalMoves++;
-
-            // Evaluate win condition
-            if (checkWin()) {
-                gameWon = 1;
-                playWinSound(); // Play win sound effect
-                
-                // Update persistent score tracking
-                if (player == 1) player1Wins++;
-                else player2Wins++;
-
-                printBoard();
-                printf("🎉 Congratulations! %s (%c) Wins!\n", currentTurnName, symbol);
-                break;
-            }
-
-            // Switch current player turn
-            player = (player == 1) ? 2 : 1;
-        }
-
-        // Handle game draw state
-        if (!gameWon && totalMoves == 9) {
-            draws++; // Increment draw count
-            printBoard();
-            printf("🤝 Game Draw! Better luck next time.\n");
-        }
-
-        // Prompt user for replay option
-        printf("\nDo you want to play again? (y/n): ");
-        scanf(" %c", &playAgain);
-
-    } while (playAgain == 'y' || playAgain == 'Y');
-
-    // Display final score summary on exit
-    printf("\nFinal Scores:\n");
-    printf("%s Wins: %d | %s Wins: %d | Draws: %d\n", player1Name, player1Wins, player2Name, player2Wins, draws);
-    printf("Thanks for playing! Goodbye 👋\n");
-    
     return 0;
 }
